@@ -1,0 +1,3 @@
+.k-days:hover:not(.c-weekend){background: #f2f2f2;}
+.c-calendar-body div.days {color: #28283b;font-size: 12px;}
+.no-event{pointer-events: none}
