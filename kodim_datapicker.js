@@ -144,10 +144,10 @@
             KodimLib().showCurrent();
         };
 
-        _KodimLibObject.showCurrent = function (timeControl=0) {
-            KodimLib().showMonth(KodimLibSettings.currYear, KodimLibSettings.currMonth, timeControl);
+        _KodimLibObject.showCurrent = function () {
+            KodimLib().showMonth(KodimLibSettings.currYear, KodimLibSettings.currMonth);
         };
-        _KodimLibObject.showMonth = function (y, m, timeControl=0) {
+        _KodimLibObject.showMonth = function (y, m) {
           let d = new Date(),firstDayOfMonth = new Date(y, m, 7).getDay()
               ,lastDateOfMonth = new Date(y, m + 1, 0).getDate(),
               lastDayOfLastMonth = m === 0 ? new Date(y - 1, 11, 0).getDate() : new Date(y, m, 0).getDate();
@@ -206,9 +206,9 @@
             } while (i <= lastDateOfMonth);
             html += '</div>';
             document.getElementById(KodimLibSettings.idDivCal).innerHTML = html;
-            KodimLib().setsDate(timeControl);
+            KodimLib().setsDate();
         };
-        _KodimLibObject.setsDate = function (timeControl=0) {
+        _KodimLibObject.setsPriorityDay = function () {
             const dLast = new Date(KodimLibSettings.oldV);
             const lD = dLast.getDate().toString();
             const lM = dLast.getMonth();
@@ -224,8 +224,31 @@
             if (KodimLibSettings.weekend === 0 && t === 0) {
                 control = 1
             }
-            if(timeControl === 1 && hd>=18){
-                control++;
+            let le = allDiv.length;
+            for (let d = 0; d < le; d++) {
+                if (allDiv[d].innerHTML === lD && lM === KodimLibSettings.currMonth && allDiv[d].classList.contains('not-current') === false) {
+                    allDiv[d + control].classList.add("k-days", "c-selected-days");
+                }
+                if (allDiv[d].innerHTML === cm.toString()  && new Date().getMonth() === KodimLibSettings.currMonth && isNaN(dLast.getTime()) && allDiv[d].classList.contains('not-current') === false) {
+                    allDiv[d + control].classList.add("k-days", "c-selected-days");
+                }
+            }
+        };
+        _KodimLibObject.setsDate = function () {
+            const dLast = new Date(KodimLibSettings.oldV);
+            const lD = dLast.getDate().toString();
+            const lM = dLast.getMonth();
+            const allDiv = document.querySelectorAll('.c-calendar-body div');
+            let control = 0;
+            const d = new Date();
+            const t = d.getDay();
+            const cm = d.getDate();
+            const hd = d.getHours();
+            if (KodimLibSettings.weekend === 0 && t === 6) {
+                control = 2
+            }
+            if (KodimLibSettings.weekend === 0 && t === 0) {
+                control = 1
             }
             let le = allDiv.length;
             for (let d = 0; d < le; d++) {
@@ -236,7 +259,7 @@
                     allDiv[d + control].classList.add("k-days", "c-selected-days");
                 }
             }
-        }
+        };
         _KodimLibObject.customFormatDate = function (day, strF) {
             Date.prototype.format = function (format) {
                 const o = {
