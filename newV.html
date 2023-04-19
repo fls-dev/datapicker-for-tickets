@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  <style>
+    .content{
+      width: 800px;
+      margin: 100px auto;
+    }
+  </style>
+
+  <style>
+    .calendar-box{
+      max-width: 280px;
+      box-sizing: border-box;
+    }
+    .calendar-box *{box-sizing: border-box}
+    #kMainDiv {
+      border-top: 1px solid;
+      border-left: 1px solid;
+      border-right: 1px solid;
+      border-color: #e2e5ec;
+      border-radius: 5px 5px 0 0;
+    }
+    .c-calendar-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px
+    }
+
+    .c-calendar-body {
+      display: block
+    }
+
+    .c-calendar-body div.days {
+      color: #28283b;
+      font-size: 12px;
+    }
+
+    .c-calendar-body div.days, .c-calendar-body div.kod-line {
+      display: flex;
+      width: 100%;
+      padding: 5px;
+      justify-content: space-around
+    }
+
+    .kod-line div {
+      width: 35px;
+      line-height: 35px;
+      height: 35px;
+      text-align: center;
+      border: 1px solid transparent
+    }
+
+    .div-content-value{
+      padding: 5px;
+      border: 1px solid #e2e5ec;
+      text-align: center;
+      margin: 0 auto;
+      width: 100%;
+      border-radius: 0 0 5px 5px;
+      display: block;
+      background: #fff;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    .div-content-value p{margin: 0;font-weight: 300}
+    #showValDate{font-weight: 600}
+
+    .data-Btn{
+      font-size: 18px;
+      line-height: 16px;
+      cursor: pointer;
+      width: 25px;
+      height: 25px;
+      background: #fff;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .c-calendar-body div.not-current, .next-month {
+      color: #ebebeb
+    }
+
+    .c-calendar-body div.normal {
+      cursor: pointer;
+      color: blue
+    }
+
+    .c-calendar-body div.c-weekend {
+      color: #ff5555;
+    }
+
+    .c-calendar-body div.today {
+      font-weight: 500;
+      color: green;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .c-calendar-body div.c-past-days {
+      pointer-events: none;
+      color: #b7b7b2
+    }
+
+    .c-calendar-head div {
+      border: none;
+      color: #28283b;
+      font-size: 16px
+    }
+
+    #cInsMessBlock {
+      font-size: 10px;
+      border-radius: 5px;
+    }
+    .k-days{border-radius: 5px;}
+    .k-days:not(.c-selected-days):hover:not(.c-weekend) {
+      background: #f2f2f2;
+      color: #0d2e57;
+    }
+    .c-calendar-body div.c-selected-days {
+      background: #2c77f4;
+      color: #fff;
+    }
+
+    .c-calendar-body div.days {
+      color: #28283b;
+      font-size: 12px;
+    }
+    .no-event{pointer-events: none}
+    .kodim-datapicker-main{
+      display: flex;
+      gap: 15px;
+      padding: 0 10px;
+    }
+    .green-noty {
+      border: 1px solid #3bed71;
+      padding: 10px 20px;
+      text-align: center;
+    }
+
+    .red-noty {
+      border: 1px solid #ed3b3b;
+      padding: 10px 20px;
+      text-align: center;
+    }
+    .orange-noty {
+      border: 1px solid #edb53b;
+      padding: 10px 20px;
+      text-align: center;
+    }
+    #cInsMessBlock b{font-weight: 600!important;}
+    #cInsMessBlock span, #cInsMessBlock span>b{font-size: 18px;}
+
+    #cInsMessBlock {
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      justify-content: center;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+<div class="content">
+  <select style="margin-bottom: 50px" type="text" class="form-control" id="priority" name="priority">
+    <option value="0">Не срочная</option>
+    <option value="1">Срочная</option>
+  </select>
+  <div class="kodim-datapicker-main">
+    <div class="calendar-box">
+      <div id="kMainDiv">
+
+      </div>
+      <div class="div-content-value">
+        <p>Дата консультации: <span id="showValDate"></span></p>
+        <input id="consultDateValue" value="" type="hidden">
+      </div>
+    </div>
+    <div id="cInsMessBlock"></div>
+  </div>
+</div>
+
+
+<script>
+  const settings = {
+    lang: "ru",
+    formatDate:"dd-MM-yyyy",
+  }
+
+  let data = {}
+  function KodimLib() {
+    const kMainDiv = document.getElementById('kMainDiv');
+    const consultDateValue = document.getElementById('consultDateValue');
+    const showValDate = document.getElementById('showValDate');
+    const render = document.getElementById('cInsMessBlock');
+
+    let _KodimLibObject = {};
+
+    const lang = {
+      ru: {
+        days: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
+      },
+      en: {
+        days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sut', 'Sun'],
+        months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      },
+      pl: {
+        days: ['Pon.', 'Wt.', 'Śr.', 'Czw.', 'Pt.', 'Sob.', 'Niedz.'],
+        months: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień']
+      },
+    }
+    const message={
+      ru: {
+        key1: "Ваша консультация будет оказана сегодня до 18:00.",
+        key2: "<b>Ваша консультация будет оказана сегодня до 18:00.</b><br><br>* Консультации заказанные после 17:30 будут оказаны на следующий рабочий день с 09:00 до 18:00",
+        key3: "Консультации заказанные после 17:30 будут оказаны на следующий рабочий день с 09:00 до 18:00.",
+        key4: "Ваша консультация будет оказана сегодня c 09:00 до 18:00.",
+        key5: "Срочная консультация будет оказана сегодня в течение часа с момента заказа консультации.",
+        key6: "Срочные консультации заказанные после 17:30 переносятся на следующий рабочий день и будут оказаны с 09:00 до 18:00.",
+        key7: "Срочная консультация будет оказана сегодня c 09:00 до 10:00.",
+        key8: "Ваша консультация будет оказана в выбранный Вами день c 09:00 до 18:00"
+      },
+      en: {
+        key1: "Your consultation will be provided today until 18:00.",
+        key2: "<b>Your consultation will be provided today until 18:00.</b><br><br>* Consultations ordered after 17:30 will be provided on the next working day from 09:00 to 18:00.",
+        key3: "Consultations ordered after 17:30 will be provided on the next business day from 09:00 to 18:00.",
+        key4: "Your consultation will be provided today from 09:00 to 18:00.",
+        key5: "An urgent consultation will be provided today within an hour from the moment the consultation was ordered.",
+        key6: "Urgent consultations ordered after 17:30 are transferred to the next business day and will be provided from 09:00 to 18:00.",
+        key7: "Urgent consultation will be provided today from 09:00 to 10:00.",
+        key8: "Your consultation will be provided on the day you choose  from 09:00 to 18:00"
+      },
+      pl: {
+        key1: "Twoja konsultacja będzie prowadzona dzisiaj do godziny 18:00.",
+        key2: "<b>Twoja konsultacja będzie prowadzona dzisiaj do godziny 18:00.</b><br><br>* Konsultacje zamówione po godzinie 17:30 będą realizowane w kolejnym dniu roboczym w godzinach od 09:00 do 18:00.",
+        key3: "Konsultacje zamówione po godzinie 17:30 będą realizowane w następnym dniu roboczym w godzinach od 09:00 do 18:00.",
+        key4: "Twoja konsultacja będzie prowadzona dzisiaj od 09:00 do 18:00.",
+        key5: "Pilna konsultacja będzie prowadzona w dniu dzisiejszym w ciągu godziny od momentu zamówienia konsultacji.",
+        key6: "Pilne konsultacje zamówione po godzinie 17:30 są przenoszone na następny dzień roboczy i będą prowadzone w godzinach od 09:00 do 18:00.",
+        key7: "Pilna konsultacja będzie prowadzona w dniu dzisiejszym w godzinach od 09:00 do 10.00.",
+        key8: "Twoja konsultacja będzie prowadzona w wybranym przez Ciebie dniu od 09:00 do 18:00"
+      }
+    }
+
+
+    _KodimLibObject.init = function (settings) {
+
+      data.today= new Date();
+      data.y= new Date().getFullYear();
+      data.m= new Date().getMonth();
+      data.d= new Date().getDay();
+      data.currD= new Date().getDate();
+      data.currDay= new Date().getDate();
+      data.currMonth= new Date().getMonth();
+      data.currYear= new Date().getFullYear();
+      data.controlValue= new Date();
+      data.formatDate = settings.formatDate
+      data.lang = settings.lang
+      data.newDateCurrentD = new Date();
+      data.controlValue = KodimLib().customFormatDate(new Date().getDate());
+      KodimLib().showMonth(data.y, data.m)
+    };
+
+    _KodimLibObject.showMonth = function (y, m, dayS = '') {
+      let firstDayOfMonth = new Date(y, m, 7).getDay()
+              ,lastDateOfMonth = new Date(y, m + 1, 0).getDate(),
+              lastDayOfLastMonth = m === 0 ? new Date(y - 1, 11, 0).getDate() : new Date(y, m, 0).getDate();
+      let html = '<div class="c-calendar-head">';
+      html += `<button id="kBtnPrev" class="data-Btn" type="button">&#8249;</button><div>${lang[settings.lang].months[m]}, ${y}</div><button class="data-Btn" id="kBtnNext" type="button">&#8250;</button></div>`;
+      html += '<div class="c-calendar-body">';
+      html += '<div class="days">';
+      for (let i = 0; i < lang[settings.lang].days.length; i++) {
+        html += '<div>' + lang[settings.lang].days[i] + '</div>';
+      }
+      html += '</div>';
+      let i = 1;
+
+      do {
+        const fixDate = new Date(y, m, i);
+        let dow = fixDate.getDay();
+        if (dow === 1) {
+          html += '<div class="kod-line">';
+        } else if (i === 1) {
+          html += '<div class="kod-line">';
+          let k = lastDayOfLastMonth - firstDayOfMonth + 1;
+          for (let j = 0; j < firstDayOfMonth; j++) {
+            html += '<div class="not-current">' + k + '</div>';
+            k++;
+          }
+        }
+        if (i === data.today.getDate() && m === data.currMonth) {
+          html += `<div class="k-days today">${i}</div>`;
+        } else if (dow === 6 || dow === 0) {
+          html += `<div class="k-days c-weekend">${i}</div>`;
+        } else if (new Date(y, m, i) < new Date()) {
+          html += `<div class="k-days c-past-days">${i}</div>`;
+        }else {html += `<div class="k-days normal">${i}</div>`;}
+        if (dow === 0) {
+          html += '</div>';
+        } else if (i === lastDateOfMonth) {
+          let k = 1;
+          for (dow; dow < 7; dow++) {
+            html += '<div class="next-month">' + k + '</div>';
+            k++;
+          }
+        }
+        i++;
+      } while (i <= lastDateOfMonth);
+      html += '</div>';
+      kMainDiv.innerHTML = html;
+      if(dayS === ''){
+        KodimLib().initDaySelect()
+      }else{
+        KodimLib().initDaySelect(dayS)
+      }
+    };
+
+
+    _KodimLibObject.showMonthArrow = function (y, m) {
+      let firstDayOfMonth = new Date(y, m, 7).getDay()
+              ,lastDateOfMonth = new Date(y, m + 1, 0).getDate(),
+              lastDayOfLastMonth = m === 0 ? new Date(y - 1, 11, 0).getDate() : new Date(y, m, 0).getDate();
+      let html = '<div class="c-calendar-head">';
+      html += `<button id="kBtnPrev" class="data-Btn" type="button">&#8249;</button><div>${lang[settings.lang].months[m]}, ${y}</div><button class="data-Btn" id="kBtnNext" type="button">&#8250;</button></div>`;
+      html += '<div class="c-calendar-body">';
+      html += '<div class="days">';
+
+      const selectedDateFull = data.newDateCurrentD;
+      const selectedDateMonth= selectedDateFull.getMonth();
+      const selectedDateDays= selectedDateFull.getDate().toString();
+
+      for (let i = 0; i < lang[settings.lang].days.length; i++) {
+        html += '<div>' + lang[settings.lang].days[i] + '</div>';
+      }
+      html += '</div>';
+      let i = 1;
+
+      do {
+        const fixDate = new Date(y, m, i);
+        let dow = fixDate.getDay();
+        if (dow === 1) {
+          html += '<div class="kod-line">';
+        } else if (i === 1) {
+          html += '<div class="kod-line">';
+          let k = lastDayOfLastMonth - firstDayOfMonth + 1;
+          for (let j = 0; j < firstDayOfMonth; j++) {
+            html += '<div class="not-current">' + k + '</div>';
+            k++;
+          }
+        }
+        if (i === data.today.getDate() && m === data.m) {
+          html += `<div class="k-days today">${i}</div>`;
+        } else if (dow === 6 || dow === 0) {
+          html += `<div class="k-days c-weekend">${i}</div>`;
+        } else if (new Date(y, m, i) < new Date()) {
+          html += `<div class="k-days c-past-days">${i}</div>`;
+        }
+        else {html += `<div class="k-days normal">${i}</div>`;}
+        if (dow === 0) {
+          html += '</div>';
+        } else if (i === lastDateOfMonth) {
+          let k = 1;
+          for (dow; dow < 7; dow++) {
+            html += '<div class="next-month">' + k + '</div>';
+            k++;
+          }
+        }
+        i++;
+      } while (i <= lastDateOfMonth);
+      html += '</div>';
+      kMainDiv.innerHTML = html;
+      const allDays = document.querySelectorAll('.kod-line div:not(.not-current):not(.next-month)');
+      const dLength= allDays.length;
+      if(selectedDateMonth===data.currMonth){
+        for (let i=0;i<dLength;i++){
+          if(allDays[i].innerHTML === selectedDateDays){
+            allDays[i].classList.add('c-selected-days')
+          }
+        }
+      }
+    };
+
+
+    _KodimLibObject.checkWhatShow = function (y, m) {
+      // const dateToday = new Date('2023-03-31');
+      const dateToday = new Date();
+      const ch = dateToday.getHours();
+      // const ch = 17;
+      // const ch = 19;
+      const cm = dateToday.getMinutes();
+      // const cm = 20;
+
+      if (ch <= 17) {
+        if(ch === 17 && cm >= 30) {
+          KodimLib().controlCountAddDay(dateToday,1)
+        }else {
+          KodimLib().controlCountAddDay(dateToday,0)
+        }
+      }else {
+        KodimLib().controlCountAddDay(dateToday,1)
+      }
+    }
+
+    _KodimLibObject.controlCountAddDay = function (dateToday,count) {
+      // const nNew = new Date('2023-03-31');
+      dateToday.setDate(dateToday.getDate()+count);
+      const day = dateToday.getDay();
+      let contr = 0;
+      if(day === 6){
+        contr = 2;
+      }else if(day === 0){
+        contr = 1;
+      }
+      const n = new Date(dateToday.setDate(dateToday.getDate()+contr));
+      consultDateValue.value = n.format('dd-MM-yyyy');
+      showValDate.innerHTML = n.format('dd-MM-yyyy');
+      data.newDateCurrentD = n;
+      data.currMonth = n.getMonth();
+      KodimLib().showMonthIfPriorityStatus(n.getFullYear(), n.getMonth())
+      KodimLib().showInfoMessage(dateToday)
+    }
+
+
+    _KodimLibObject.showMonthIfPriorityStatus = function (y, m) {
+
+      let firstDayOfMonth = new Date(y, m, 7).getDay()
+              ,lastDateOfMonth = new Date(y, m + 1, 0).getDate(),
+              lastDayOfLastMonth = m === 0 ? new Date(y - 1, 11, 0).getDate() : new Date(y, m, 0).getDate();
+      let html = '<div class="c-calendar-head no-event">';
+      html += `<button id="kBtnPrev" class="data-Btn" type="button">&#8249;</button><div>${lang[settings.lang].months[m]}, ${y}</div><button class="data-Btn" id="kBtnNext" type="button">&#8250;</button></div>`;
+      html += '<div class="c-calendar-body no-event">';
+      html += '<div class="days">';
+
+      const selectedDateFull = data.newDateCurrentD;
+      const selectedDateMonth= selectedDateFull.getMonth();
+      const selectedDateDays= selectedDateFull.getDate().toString();
+
+      for (let i = 0; i < lang[settings.lang].days.length; i++) {
+        html += '<div>' + lang[settings.lang].days[i] + '</div>';
+      }
+      html += '</div>';
+      let i = 1;
+
+      do {
+        const fixDate = new Date(y, m, i);
+        let dow = fixDate.getDay();
+        if (dow === 1) {
+          html += '<div class="kod-line">';
+        } else if (i === 1) {
+          html += '<div class="kod-line">';
+          let k = lastDayOfLastMonth - firstDayOfMonth + 1;
+          for (let j = 0; j < firstDayOfMonth; j++) {
+            html += '<div class="not-current">' + k + '</div>';
+            k++;
+          }
+        }
+        if (i === data.today.getDate() && m === data.m) {
+          html += `<div class="k-days today">${i}</div>`;
+        } else if (dow === 6 || dow === 0) {
+          html += `<div class="k-days c-weekend">${i}</div>`;
+        } else if (new Date(y, m, i) < new Date()) {
+          html += `<div class="k-days c-past-days">${i}</div>`;
+        }
+        else {html += `<div class="k-days normal">${i}</div>`;}
+        if (dow === 0) {
+          html += '</div>';
+        } else if (i === lastDateOfMonth) {
+          let k = 1;
+          for (dow; dow < 7; dow++) {
+            html += '<div class="next-month">' + k + '</div>';
+            k++;
+          }
+        }
+        i++;
+      } while (i <= lastDateOfMonth);
+      html += '</div>';
+      kMainDiv.innerHTML = html;
+      const allDays = document.querySelectorAll('.kod-line div:not(.not-current):not(.next-month)');
+      const dLength= allDays.length;
+      if(selectedDateMonth===data.currMonth){
+        for (let i=0;i<dLength;i++){
+          if(allDays[i].innerHTML === selectedDateDays){
+            allDays[i].classList.add('c-selected-days')
+          }
+        }
+      }
+    };
+
+
+    _KodimLibObject.initDaySelect = function (dayS = '') {
+      const allDays = document.querySelectorAll('.kod-line div');
+      const dLength= allDays.length;
+      if(dayS === ''){
+        // const nNew = new Date('2023-04-01');
+        const nNew = new Date();
+        const day = data.today.getDay();
+        let contr = 0;
+        if(day === 6){
+          contr = 2;
+        }else if(day === 0){
+          contr = 1;
+        }
+        const n = new Date(nNew.setDate(nNew.getDate()+contr));
+        const nToday = n.getDate();
+        const nTodayNumber = n.getDay();
+        const nTodayStr = n.getDate().toString();
+        data.newDateCurrentD = new Date(data.currYear,data.currMonth, Number(nTodayStr));
+        data.controlValue = KodimLib().customFormatDate(nTodayStr);
+        consultDateValue.value = data.controlValue;
+        showValDate.innerHTML = data.controlValue;
+        const nMoth = n.getMonth();
+        if(nMoth===data.currMonth){
+          for (let i=0;i<dLength;i++){
+            if(allDays[i].innerHTML === nTodayStr){
+              KodimLib().showInfoMessage(n)
+              allDays[i].classList.add('c-selected-days')
+            }
+          }
+        }else{
+          let ctr = 0;
+          if(nTodayNumber === 6){
+            ctr = 2;
+          }else if(nTodayNumber === 0){
+            ctr = 1;
+          }
+          const nTodayNew = nToday+ctr;
+          KodimLib().showMonth(data.y, nMoth, nTodayNew.toString())
+        }
+      }else{
+        data.newDateCurrentD = new Date(data.currYear,data.currMonth, Number(dayS));
+        data.controlValue = KodimLib().customFormatDate(dayS);
+        consultDateValue.value = data.controlValue;
+        showValDate.innerHTML = data.controlValue;
+        for (let i=0;i<dLength;i++){
+          if(allDays[i].innerHTML === dayS){
+            KodimLib().showInfoMessage(new Date(data.currYear,data.currMonth, Number(dayS)))
+            allDays[i].classList.add('c-selected-days')
+          }
+        }
+      }
+    }
+
+
+    _KodimLibObject.nextMonth = function () {
+      if (data.currMonth === 11) {
+        data.currMonth = 0;
+        data.currYear = data.currYear + 1;
+      } else {
+        data.currMonth = data.currMonth + 1;
+      }
+      KodimLib().showMonthArrow(data.currYear, data.currMonth)
+    };
+
+
+    _KodimLibObject.previousMonth = function () {
+      if (data.currMonth === 0) {
+        data.currMonth = 11;
+        data.currYear = data.currYear - 1;
+      } else {
+        data.currMonth = data.currMonth - 1;
+      }
+      KodimLib().showMonthArrow(data.currYear, data.currMonth)
+    };
+
+
+    _KodimLibObject.setDateSelect = function (e) {
+      const t = e.target.innerHTML;
+      //
+      data.newDateCurrentD = new Date(data.currYear,data.currMonth, Number(t));
+      data.controlValue = KodimLib().customFormatDate(t);
+      consultDateValue.value = data.controlValue;
+      showValDate.innerHTML = data.controlValue;
+      const allDays = document.querySelectorAll('.kod-line div.normal, div.today');
+      const dLength= allDays.length;
+      for (let i=0;i<dLength;i++){
+        if(allDays[i].innerHTML === t){
+          allDays[i].classList.add('c-selected-days')
+        }else{
+          allDays[i].classList.remove('c-selected-days')
+          allDays[i].classList.add('normal')
+        }
+      }
+      KodimLib().showInfoMessage(new Date(data.currYear,data.currMonth, Number(t)))
+    };
+
+    _KodimLibObject.showInfoMessage = function (date_select) {
+      const lang = data.lang;
+      const priority = document.getElementById('priority');
+
+      // const dateToday = new Date('2023-03-31');
+      const dateToday = new Date();
+      console.info('showInfoMessage..dateToday--:'+dateToday)
+      const currD = dateToday.getDate().toString();
+      // const currD = '28';
+      const currM = dateToday.getMonth();
+      const ch = dateToday.getHours();
+      // const ch = 17;
+      // const ch = 19;
+      const cm = dateToday.getMinutes();
+      // const cm = 20;
+
+      const date = new Date(date_select);
+      const gD = date.getDate().toString();
+      const gM = date.getMonth();
+      if (priority.value === "1") {
+        if (gD === currD && currM === gM) {
+          if (0 <= ch && ch <= 8) {
+            // green
+            render.classList.add('green-noty');
+            render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/green.png'><span>${message[lang].key7}</span>`;
+          } else if (9 <= ch && ch <= 17) {
+            if (ch === 17 && cm <= 30) {
+              // orange
+              render.classList.add('green-noty')
+              render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/green.png'><span>${message[lang].key7}</span>`;
+            } else if(ch === 17 && cm >= 30) {
+              // green
+              KodimLib().checkDataIsValid(date_select);
+              render.classList.add('red-noty')
+              render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/red.png'><span>${message[lang].key6}</span>`;
+            }else{
+              render.classList.add('green-noty')
+              render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/green.png'><span>${message[lang].key5}</span>`;
+            }
+          } else {
+            // red
+            KodimLib().checkDataIsValid(date_select);
+            render.classList.add('red-noty');
+            render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/red.png'><span>${message[lang].key6}</span>`;
+          }
+        } else {
+          render.className = '';
+          render.classList.add('green-noty')
+          render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/green.png'><span>${message[lang].key8}</span>`;
+        }
+      } else {
+        if (gD === currD && currM === gM) {
+          if (9 <= ch && ch <= 17) {
+            if (ch === 17 && cm <= 30) {
+              // orange
+              render.classList.add('orange-noty')
+              render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/orange.png'><span>${message[lang].key2}</span>`;
+            } else if(ch === 17 && cm >= 30) {
+              // green
+              KodimLib().checkDataIsValid(date_select)
+              render.classList.add('red-noty');
+              render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/red.png'><span>${message[lang].key3}</span>`;
+            }else{
+              render.classList.add('green-noty')
+              render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/green.png'><span>${message[lang].key1}</span>`;
+            }
+          } else if (0 <= ch && ch <= 8) {
+            // green
+            render.classList.add('green-noty')
+            render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/green.png'><span>${message[lang].key4}</span>`;
+          } else {
+            KodimLib().checkDataIsValid(date_select)
+            // red
+            render.classList.add('red-noty');
+            render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/red.png'><span>${message[lang].key3}</span>`;
+          }
+        } else {
+          render.className = '';
+          render.classList.add('green-noty')
+          render.innerHTML = `<img class='img-tickets-desc' src='/assets/media/tickets/green.png'><span>${message[lang].key8}</span>`;
+        }
+      }
+    }
+
+    _KodimLibObject.checkDataIsValid = function (date_select) {
+      const nNew = new Date(date_select);
+      nNew.setDate(nNew.getDate()+1);
+      const day = nNew.getDay();
+      let contr = 0;
+      if(day === 6){
+        contr = 2;
+      }else if(day === 0){
+        contr = 1;
+      }
+      const n = new Date(nNew.setDate(nNew.getDate()+contr)).format('dd-MM-yyyy');
+
+      consultDateValue.value = n;
+      showValDate.innerHTML = n;
+    }
+
+    _KodimLibObject.customFormatDate = function (day) {
+      Date.prototype.format = function (format) {
+        const o = {
+          "M+": this.getMonth() + 1,
+          "d+": this.getDate(),
+          "h+": this.getHours(),
+          "m+": this.getMinutes(),
+          "s+": this.getSeconds(),
+          "q+": Math.floor((this.getMonth() + 3) / 3),
+          "S": this.getMilliseconds()
+        }
+        if (/(y+)/.test(format)) format = format.replace(RegExp.$1,
+                (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (let k in o) if (new RegExp("(" + k + ")").test(format))
+          format = format.replace(RegExp.$1,
+                  RegExp.$1.length == 1 ? o[k] :
+                          ("00" + o[k]).substr(("" + o[k]).length));
+        return format;
+      }
+
+      return new Date(data.currYear,data.currMonth, day).format(data.formatDate);
+    };
+
+    return _KodimLibObject;
+  }
+
+  const databox = document.getElementById('kMainDiv');
+  if (databox) {
+    databox.addEventListener('click', (e) => {
+      // console.log("CLICK CLICK")
+      const id = e.target.id;
+      if (id === 'kBtnNext') {
+        KodimLib().nextMonth()
+      } else if (id === 'kBtnPrev') {
+        KodimLib().previousMonth()
+      } else if (e.target.classList.contains('normal')) {
+        KodimLib().setDateSelect(e)
+      } else if (e.target.classList.contains('today')) {
+        KodimLib().setDateSelect(e)
+      }
+    })
+  }
+  const priority = document.getElementById('priority');
+  priority.addEventListener('change', (e)=>{
+    console.log(e.target.value)
+    if(e.target.value === "1"){
+      KodimLib().checkWhatShow()
+    }else{
+      KodimLib().showMonth(new Date().getFullYear(), new Date().getMonth())
+    }
+  })
+
+  KodimLib().init(settings)
+
+
+</script>
+</body>
+</html>
